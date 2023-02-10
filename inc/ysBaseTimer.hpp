@@ -1,6 +1,8 @@
 ﻿#pragma once
 
 #include <chrono>
+#include <unordered_map>
+#include <thread>
 
 namespace YS::Time
 {
@@ -10,11 +12,11 @@ namespace YS::Time
         enum class State { Stop, Run, Pause };
 
     protected:
-        BaseTimer() = default;
-        BaseTimer(BaseTimer const &) = default;
+        BaseTimer();
+        BaseTimer(BaseTimer const &);
         BaseTimer(BaseTimer &&) = default;
-        ~BaseTimer() = default;
-        BaseTimer& operator=(BaseTimer const&) = default;
+        virtual ~BaseTimer();
+        BaseTimer& operator=(BaseTimer const&);
         BaseTimer& operator=(BaseTimer &&) = default;
 
     public:
@@ -22,9 +24,11 @@ namespace YS::Time
         void Pause();
         void Stop() { m_state = State::Stop; }
 
-        State GetState() { return m_state; }
+        State GetState() const { return m_state; }
+        std::size_t GetID() const { return m_ID; }
 
     protected:
+        virtual void OnTick() = 0;
         std::chrono::nanoseconds GetDuration() const;
 
     private:
@@ -32,5 +36,12 @@ namespace YS::Time
         timepoint m_tpStart;
         timepoint m_tpPause;
         State m_state = State::Stop;
+        std::size_t m_ID;
+
+        static std::size_t ms_initID;
+        static std::unordered_map<std::size_t, BaseTimer&> ms_mapTimer;
+        static std::thread ms_threadTimer;
+    protected:
+        static std::mutex ms_mutexTimer;
     };
 }

@@ -10,5 +10,6 @@ add_library(${target_name} ${sources})
 
 add_subdirectory(submodules/YSDefine)
 add_subdirectory(submodules/YSDesignPattern)
+add_subdirectory(submodules/YSEvent)
 
 target_include_directories(${target_name} PUBLIC inc/)

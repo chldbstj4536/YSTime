@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <ysBaseTimer.hpp>
+#include <ysEvent.hpp>
 
 namespace YS::Time
 {
@@ -10,7 +11,7 @@ namespace YS::Time
         Timer() = delete;
         Timer(Timer const &) = default;
         Timer(Timer &&) = default;
-        ~Timer() = default;
+        ~Timer();
         Timer& operator=(Timer const &) = default;
         Timer& operator=(Timer &&) = default;
 
@@ -20,6 +21,10 @@ namespace YS::Time
         template<class _Rep = float, class _Period = std::ratio<1>>
         std::chrono::duration<_Rep, _Period> GetRemainTime() { return std::chrono::duration_cast<std::chrono::duration<_Rep, _Period>>(m_time - GetDuration()); }
     private:
+        virtual void OnTick() override;
         std::chrono::nanoseconds m_time;
+
+    public:
+        Event<void()> OnTimerDone;
     };
 }
