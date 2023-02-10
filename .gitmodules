@@ -1,3 +1,6 @@
 [submodule "submodules/YSDesignPattern"]
 	path = submodules/YSDesignPattern
 	url = ../YSDesignPattern.git
+[submodule "submodules/YSDefine"]
+	path = submodules/YSDefine
+	url = ../YSDefine.git
