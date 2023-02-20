@@ -1,21 +1,28 @@
 ﻿#include <ysStopwatch.hpp>
 
 using namespace std;
-using namespace std::chrono;
-using namespace YS;
 using namespace YS::Time;
-
-Stopwatch::~Stopwatch()
-{
-    ms_mutexTimer.lock();
-}
 
 void Stopwatch::OnTick()
 {
-    while (!m_mapEvent.empty())
+    while (m_atomFlagForEventQ.test_and_set());
+
+    while (!m_eventQ.empty())
     {
-        auto& [lap, e] = m_mapEvent.top();
-        if (lap <= GetDuration()) { e(); m_mapEvent.pop(); }
+        auto& [lap, e] = m_eventQ.top();
+        if (lap <= GetDuration()) { e(); m_eventQ.pop(); }
         else break;
     }
+
+    m_atomFlagForEventQ.clear();
+}
+
+shared_ptr<Stopwatch> Stopwatch::Create()
+{
+    static PassKey<Stopwatch> key;
+
+    auto ret = make_shared<Stopwatch>(key);
+    ret->Init();
+
+    return ret;
 }
