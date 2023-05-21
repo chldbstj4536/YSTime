@@ -23,6 +23,7 @@ YSTime 저장소를 복제한다.
 
 ```
 git clone https://github.com/chldbstj4536/YSTime.git
+git submodule update --init --recursive
 ```
 
 CMake를 통해 빌드파일들을 생성하고 빌드한다.
@@ -41,6 +42,7 @@ YSTime 저장소를 복제한다.
 
 ```
 git clone https://github.com/chldbstj4536/YSTime.git
+git submodule update --init --recursive
 ```
 
 subdirectory로 복제한 폴더를 추가한다.
