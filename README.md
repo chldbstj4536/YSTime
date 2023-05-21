@@ -22,7 +22,7 @@ CMake에서 빌드 후 라이브러리 사용 또는 CMake 프로젝트에 subdi
 YSTime 저장소를 복제한다.
 
 ```
-git clone https://github.com/chldbstj4536/YSUtility.git
+git clone https://github.com/chldbstj4536/YSTime.git
 ```
 
 CMake를 통해 빌드파일들을 생성하고 빌드한다.
