@@ -40,7 +40,7 @@ lib/inc 폴더에 헤더와 라이브러리가 생성된다.
 YSTime 저장소를 복제한다.  
 
 ```
-git clone https://github.com/chldbstj4536/YSUtility.git
+git clone https://github.com/chldbstj4536/YSTime.git
 ```
 
 subdirectory로 복제한 폴더를 추가한다.
@@ -61,7 +61,7 @@ build 폴더에 사용하는 빌드도구에 맞게 프로젝트가 생성된다
 YSTime 저장소를 복제한다.
 
 ```
-git clone https://github.com/chldbstj4536/YSUtility.git
+git clone https://github.com/chldbstj4536/YSTime.git
 ```
 
 CMake를 통해 프로젝트를 생성한다.
