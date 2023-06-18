@@ -1,9 +1,9 @@
-﻿#pragma once
+#pragma once
 
 #include <concepts>
 #include <ysDefine.hpp>
-#include <ysBaseTimer.hpp>
 #include <ysEvent.hpp>
+#include "ysBaseTimer.hpp"
 
 #define _CRN std::chrono
 

@@ -1,9 +1,9 @@
-﻿#pragma once
+#pragma once
 
 #include <chrono>
 #include <ysDefine.hpp>
-#include <ysSingleton.hpp>
-#include <ysStopwatch.hpp>
+#include <YSDesignPattern/ysSingleton.hpp>
+#include "ysStopwatch.hpp"
 
 #define _CRN std::chrono
 

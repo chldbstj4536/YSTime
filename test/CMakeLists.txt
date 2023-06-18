@@ -1,17 +1,27 @@
-﻿cmake_minimum_required(VERSION 3.25)
+cmake_minimum_required(VERSION 3.25)
 
-project(TestForYSTime
-        LANGUAGES CXX)
+project(YSTimeTest
+    LANGUAGES CXX)
 
-set(target_name TestForYSTime)
+execute_process(COMMAND ${CMAKE_COMMAND} -S ./.. -B ./../build -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX})
+execute_process(COMMAND ${CMAKE_COMMAND} --build ./../build --target install)
 
-add_subdirectory(../ ../build/YSTime)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-file(GLOB_RECURSE sources CONFIGURE_DEPENDS *.cpp)
-add_executable(${target_name} ${sources})
-
-target_link_libraries(${target_name} YSTime)
+add_executable(ysTimeTest main.cpp)
 
 if (MSVC)
-    set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${target_name})
+    file(GLOB_RECURSE libraries CONFIGURE_DEPENDS ${CMAKE_INSTALL_PREFIX}/lib/*.lib)
+else()
+    file(GLOB_RECURSE libraries CONFIGURE_DEPENDS ${CMAKE_INSTALL_PREFIX}/lib/*.a)
+endif()
+
+target_include_directories(ysTimeTest
+    PUBLIC ${CMAKE_INSTALL_PREFIX}/inc)
+target_link_libraries(ysTimeTest
+    PUBLIC ${libraries})
+
+if (MSVC)
+    set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ysTimeTest)
 endif ()
