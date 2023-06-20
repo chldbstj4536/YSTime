@@ -16,17 +16,23 @@ namespace YS::Time
     class Timer final : public BaseTimer
     {
     public:
+/// @cond
         Timer() = delete;
-        Timer(Timer const &) = delete;
+        Timer(Timer const &) = default;
         Timer(Timer &&) = default;
         virtual ~Timer() = default;
         Timer& operator=(Timer const &) = default;
         Timer& operator=(Timer &&) = default;
+/// @endcond
 
         /**
          * @brief make_shared에서 접근 가능하게 하기 위한 생성자
+         * 
+         * Create 전역 함수에서 호출
+         * 
+         * @param time Timer 시간 설정
          */
-        template<number _Rep = long long, class _Period = std::milli>
+        template<number _Rep = Int64, class _Period = std::milli>
         Timer(PassKey<Timer>, _CRN::duration<_Rep, _Period> time) : m_time(_CRN::duration_cast<_CRN::nanoseconds>(time)) { }
 
         /**
@@ -50,6 +56,9 @@ namespace YS::Time
         template<number _Rep, class _Period = std::ratio<1>>
         _CRN::duration<_Rep, _Period> GetRemainTime() { return GetRemainTime<_CRN::duration<_Rep, _Period>>(); }
     private:
+        /**
+         * @brief 매 Tick마다 호출되는 함수
+         */
         virtual void OnTick() override;
 
     public:
@@ -60,10 +69,14 @@ namespace YS::Time
          * 사용자가 생성자를 통한 직접 생성은 좋은 방법이 아니다.
          * 따라서 Create 전역함수를 통한 shared_ptr에 객체를 담아서 생성해주는 함수이다.
          * 
+         * @tparam _Rep Tick을 표현하는 산술 타입
+         * @tparam _Period Tick 기간을 표현하는 std::ratio 타입
+         * @param time Timer 시간 설정
+         * @exception std::bad_alloc 메모리 할당에 실패
          * @return std::shared_ptr<Timer> 생성된 Timer
          */
-        template<number _Rep = long long, class _Period = std::milli>
-        static std::shared_ptr<Timer> Create(_CRN::duration<_Rep, _Period> time)
+        template<number _Rep = Int64, class _Period = std::milli>
+        static std::shared_ptr<Timer> Create(_CRN::duration<_Rep, _Period> time) throw(std::bad_alloc)
         {
             static PassKey<Timer> key;
 

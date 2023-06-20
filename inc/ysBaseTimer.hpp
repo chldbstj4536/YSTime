@@ -1,11 +1,12 @@
 #pragma once
 
 #include <chrono>
-#include <unordered_map>
+#include <forward_list>
 #include <queue>
 #include <thread>
 #include <atomic>
 #include <ysUtility.hpp>
+#include <ysDefine.hpp>
 
 namespace YS::Time
 {
@@ -23,13 +24,19 @@ namespace YS::Time
         enum class State { Stop, Run, Pause };
 
     protected:
-        BaseTimer() : m_id(ms_data.initID++) {}
-        BaseTimer(BaseTimer const&) = delete;
+        BaseTimer() = default;
+        BaseTimer(BaseTimer const&) = default;
         BaseTimer(BaseTimer &&) = default;
         virtual ~BaseTimer() = default;
-        BaseTimer& operator=(BaseTimer const&);
+        BaseTimer& operator=(BaseTimer const&) = default;
         BaseTimer& operator=(BaseTimer &&) = default;
 
+    protected:
+        /**
+         * @brief 타이머가 생성되면 호출되는 함수
+         * 
+         * timer 스레드가 없다면 새로 스레드를 생성한다.
+         */
         virtual void Init();
     public:
         /**
@@ -39,27 +46,27 @@ namespace YS::Time
          * 일시정지 중이라면 다시 작동한다.
          * 이미 타이머가 작동중이면 아무일도 일어나지 않는다.
          */
-        void Start();
+        void Start() noexcept;
         /**
          * @brief 타이머 일시정지
          * 
          * 타이머가 작동중이라면 일시정지 한다.
          * 타이머가 작동중이지 않다면(Stop or Pause) 아무일도 일어나지 않는다.
          */
-        void Pause();
+        void Pause() noexcept;
         /**
          * @brief 타이머 정지
          * 
          * 타이머를 정지상태로 만든다.
          */
-        void Stop() { m_state = State::Stop; }
+        void Stop() noexcept { m_state = State::Stop; }
 
         /**
          * @brief 타이머의 상태를 얻는다.
          * 
          * @return State 현재 타이머의 상태
          */
-        State GetState() const { return m_state; }
+        State GetState() const noexcept { return m_state; }
 
     protected:
         /**
@@ -73,7 +80,7 @@ namespace YS::Time
          * 
          * @return std::chrono::nanoseconds 타이머 흐른 시간
          */
-        std::chrono::nanoseconds GetDuration() const;
+        std::chrono::nanoseconds GetDuration() const noexcept;
 
     private:
         /**
@@ -87,11 +94,9 @@ namespace YS::Time
 
     private:
         using timepoint = std::chrono::high_resolution_clock::time_point;
-
         timepoint m_startTp;
         timepoint m_pauseTp;
         State m_state = State::Stop;
-        std::size_t m_id;
 
         /**
          * @class staticDataSet 
@@ -104,6 +109,8 @@ namespace YS::Time
         {
             ~staticDataSet()
             {
+                // 소멸자가 호출됐다는 것은 프로그램이 종료되었다는 의미
+                // 따라서 timerThread에서의 작업이 끝나는지 체크 후 request_stop 함수를 호출해 종료하도록 한다.
                 while (atomFlag.test_and_set());
 
                 if (timerThread.get_id() != std::jthread::id())
@@ -114,10 +121,21 @@ namespace YS::Time
                 }
             }
 
-            std::size_t initID = 0;
+            /**
+             * @brief Tick을 계산하는 Timer스레드, 해당 스레드에서 OnTick 함수가 호출된다.
+             */
             std::jthread timerThread;
-            std::unordered_map<std::size_t, std::shared_ptr<BaseTimer>> timerMap;
-            std::queue<std::pair<std::size_t, std::shared_ptr<BaseTimer>>> timerQ;
+            /**
+             * @brief Thread에서 동작중인 forward_list
+             */
+            std::forward_list<std::shared_ptr<BaseTimer>> timerList;
+            /**
+             * @brief TimerMap에 들어갈 Timer들에 대한 버퍼
+             */
+            std::queue<std::shared_ptr<BaseTimer>> timerQ;
+            /**
+             * @brief TimerThread에서 데이터 레이싱을 방지하기 위한 atomic_flag변수
+             */
             std::atomic_flag atomFlag;
 
         } ms_data;

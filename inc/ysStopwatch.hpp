@@ -12,12 +12,14 @@ namespace YS::Time
     class Stopwatch final : public BaseTimer
     {
     public:
+/// @cond
         Stopwatch() = delete;
-        Stopwatch(Stopwatch const &) = delete;
+        Stopwatch(Stopwatch const &) = default;
         Stopwatch (Stopwatch &&) = default;
         virtual ~Stopwatch() = default;
         Stopwatch& operator=(Stopwatch const &) = default;
         Stopwatch& operator=(Stopwatch &&) = default;
+/// @endcond
 
         /**
          * @brief make_shared에서 접근 가능하게 하기 위한 생성자
@@ -50,8 +52,8 @@ namespace YS::Time
          * 
          * 지정한 시점이 되면 호출되는 이벤트를 추가한다.
          * 
-         * @tparam _Rep tick의 숫자를 표현할 산술 타입
-         * @tparam _Period tick 기간을 표현할 std::ratio 타입
+         * @tparam _Rep Tick을 표현하는 산술 타입
+         * @tparam _Period tick 기간을 표현하는 std::ratio 타입
          * @param eventTime 이벤트를 호출할 시점
          * @param event 등록할 이벤트
          * 
@@ -65,6 +67,9 @@ namespace YS::Time
             m_atomFlagForEventQ.clear();
         }
     private:
+        /**
+         * @brief 매 Tick마다 호출되는 함수
+         */
         virtual void OnTick() override;
 
     public:
@@ -75,17 +80,18 @@ namespace YS::Time
          * 사용자가 생성자를 통한 직접 생성은 좋은 방법이 아니다.
          * 따라서 Create 전역함수를 통한 shared_ptr에 객체를 담아서 생성해주는 함수이다.
          * 
+         * @exception std::bad_alloc 메모리 할당에 실패
          * @return std::shared_ptr<Stopwatch> 생성된 Stopwatch
          */
-        static std::shared_ptr<Stopwatch> Create();
+        static std::shared_ptr<Stopwatch> Create() throw(std::bad_alloc);
 
     private:
         /**
          * @brief 타이머에 담긴 이벤트를 관리하는 큐
          */
 #define _QUEUE_TYPE std::pair<_CRN::nanoseconds, Event<void()>>
-        using pqEvent = std::priority_queue<_QUEUE_TYPE, std::vector<_QUEUE_TYPE>, bool(*)(_QUEUE_TYPE, _QUEUE_TYPE)>;
-        pqEvent m_eventQ { [](_QUEUE_TYPE lhs, _QUEUE_TYPE rhs) { return lhs.first > rhs.first; } };
+        using pqEvent = std::priority_queue<_QUEUE_TYPE, std::vector<_QUEUE_TYPE>, bool(*)(const _QUEUE_TYPE&, const _QUEUE_TYPE&)>;
+        pqEvent m_eventQ { [](const _QUEUE_TYPE &lhs, const _QUEUE_TYPE &rhs) { return lhs.first > rhs.first; } };
 #undef _QUEUE_TYPE
         /**
          * @brief 이벤트 큐의 데이터 레이스를 방지하기 위한 변수

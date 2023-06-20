@@ -7,24 +7,19 @@ using namespace std::chrono;
 
 BaseTimer::staticDataSet BaseTimer::ms_data;
 
-BaseTimer& BaseTimer::operator=(BaseTimer const &o)
-{
-    m_startTp = o.m_startTp;
-    m_pauseTp = o.m_pauseTp;
-    m_state = o.m_state;
-    return *this;
-}
-
 void BaseTimer::Init()
 {
     while (ms_data.atomFlag.test_and_set());
-    ms_data.timerQ.push({ m_id, shared_from_this() });
+
+    ms_data.timerQ.push(shared_from_this());
+
     ms_data.atomFlag.clear();
+
     if (ms_data.timerThread.get_id() == jthread::id())
         ms_data.timerThread = jthread(&BaseTimer::ThreadEntry);
 }
 
-void BaseTimer::Start()
+void BaseTimer::Start() noexcept
 {
     switch (m_state)
     {
@@ -40,7 +35,7 @@ void BaseTimer::Start()
 
     m_state = State::Run;
 }
-void BaseTimer::Pause()
+void BaseTimer::Pause() noexcept
 {
     switch (m_state)
     {
@@ -53,7 +48,7 @@ void BaseTimer::Pause()
         break;
     }
 }
-nanoseconds BaseTimer::GetDuration() const
+nanoseconds BaseTimer::GetDuration() const noexcept
 {
     switch (m_state)
     {
@@ -70,28 +65,57 @@ void BaseTimer::ThreadEntry(stop_token stoken)
     while (true)
     {
         while (ms_data.atomFlag.test_and_set());
-        while (!ms_data.timerQ.empty()) ms_data.timerMap.insert(move(ms_data.timerQ.front())), ms_data.timerQ.pop();
 
-        if (ms_data.timerMap.empty())
+        while (!ms_data.timerQ.empty())
+        {
+            ms_data.timerList.push_front(move(ms_data.timerQ.front()));
+            ms_data.timerQ.pop();
+        }
+
+        // atomFlag중복을 없애려고 if문 위에서 하게 되면
+        // 데이터 레이싱이 발생할 수 있다. (if문 안에 들어간 후에 timerQ에 값이 들어갈 수 있음)
+        if (ms_data.timerList.empty())
         {
             ms_data.timerThread.detach();
             ms_data.atomFlag.clear();
             return;
         }
+
         ms_data.atomFlag.clear();
 
-        for (auto it = ms_data.timerMap.begin(); it != ms_data.timerMap.end();)
+        // front에 대한 처리
+        while (!ms_data.timerList.empty())
         {
-            auto& id = it->first;
-            auto& timer = it->second;
-
-            if (timer.use_count() == 1)
+            if (ms_data.timerList.front().use_count() == 1)
             {
-                ms_data.timerMap.erase(it++);
-                cout << format("timer was erased. now, ms_timerMap.size is {}\n", ms_data.timerMap.size());
+                ms_data.timerList.pop_front();
             }
             else
-                timer->OnTick(), ++it;
+            {
+                ms_data.timerList.front()->OnTick();
+                break;
+            }
+        }
+
+        if (!ms_data.timerList.empty())
+        {
+            // 이후 iterator들에 대한 처리
+            // 첫 원소(begin)은 위에서 처리했으므로 두번째 원소부터 처리
+            auto nextIter = ms_data.timerList.begin();
+            auto lastIter = nextIter++;
+
+            while (nextIter != ms_data.timerList.end())
+            {
+                if ((*nextIter).use_count() == 1)
+                {
+                    nextIter = ms_data.timerList.erase_after(lastIter);
+                }
+                else
+                {
+                    (*nextIter)->OnTick();
+                    lastIter = nextIter++;
+                }
+            }
         }
 
         if (stoken.stop_requested())
