@@ -51,7 +51,7 @@ namespace YS::Time
         template <typename _Duration = _CRN::milliseconds>
         _Duration GetRealTime() { return m_pTimer->GetLap<_Duration>(); }
 
-        template <number _Rep = float, typename _Period = std::milli>
+        template <number _Rep, typename _Period = std::milli>
         _CRN::duration<_Rep, _Period> GetRealTime() { return GetRealTime<_CRN::duration<_Rep, _Period>>(); }
 
         template <typename _Duration = _CRN::milliseconds>
